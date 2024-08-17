@@ -20,7 +20,26 @@ int sum_array(unsigned int *array, unsigned int size) {
     return sum;
 }
 
-void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_out, unsigned int *depths) {
+struct BinFlags {
+    unsigned int flags[8];
+};
+
+int bitCount(unsigned int n) {
+    int count = 0;
+    while (n) {
+        count += n & 1;
+        n >>= 1;
+    }
+    return count;
+}
+
+unsigned int float_to_uint(float f) {
+    unsigned int result;
+    memcpy(&result, &f, sizeof(result));
+    return result;
+}
+
+void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_out, float *depths) {
     assert(sizeof(index_in) == sizeof(index_out));
     assert(sizeof(index_in) == sizeof(depths));
 
@@ -32,7 +51,7 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
         for(int lID = 0; lID < WORKGROUP_SIZE; lID++) {
             for (unsigned int ID = lID; ID < num_elements; ID += WORKGROUP_SIZE) {
                 unsigned int index = get_index_in(ID, iteration, index_in, index_out);
-                unsigned int depth = depths[index];
+                unsigned int depth = float_to_uint(depths[index]);
                 // determine the bin
                 unsigned int bin = (depth >> shift) & (RADIX_SORT_BINS - 1);
                 // increment the histogram
@@ -69,23 +88,52 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
 
         // Scatter phase
         unsigned int *output = (iteration % 2 == 0) ? index_out : index_in;
+        struct BinFlags bin_flags[WORKGROUP_SIZE];
+        unsigned int global_offsets[WORKGROUP_SIZE] = {0};
 
-        unsigned int local_offset[RADIX_SORT_BINS] = {0};
         for (int i = 0; i < RADIX_SORT_BINS; i++) {
-            local_offset[i] = prefix_sums[i];
+            for (int j = 0; j < 8; j++) {
+                bin_flags[i].flags[j] = 0;
+            }
         }
 
         for (unsigned int blockID = 0; blockID < num_elements; blockID += WORKGROUP_SIZE) {
             for (int lID = 0; lID < WORKGROUP_SIZE; lID++) {
+                int flags_bin = lID / 32;
+                int flags_bit = 1 << (lID % 32);
                 int ID = blockID + lID;
+
                 if (ID < num_elements) {
-                    int ID = blockID + lID;
                     unsigned int index = get_index_in(ID, iteration, index_in, index_out);
-                    unsigned int depth = depths[index];
+                    unsigned int depth = float_to_uint(depths[index]);
                     unsigned int bin = (depth >> shift) & (RADIX_SORT_BINS - 1);
-                    unsigned int offset = local_offset[bin];
-                    local_offset[bin] += 1;
-                    output[offset] = index;
+                    global_offsets[lID] = prefix_sums[bin];
+                    bin_flags[bin].flags[flags_bin] += flags_bit;
+                }
+            }
+
+            for (int lID = 0; lID < WORKGROUP_SIZE; lID++) {
+                int flags_bin = lID / 32;
+                int flags_bit = 1 << (lID % 32);
+                int ID = blockID + lID;
+
+                if (ID < num_elements) {
+                    unsigned int index = get_index_in(ID, iteration, index_in, index_out);
+                    unsigned int depth = float_to_uint(depths[index]);
+                    unsigned int bin = (depth >> shift) & (RADIX_SORT_BINS - 1);
+                    
+                    int prefix = 0;
+                    int count = 0;
+                    for (int i = 0; i < WORKGROUP_SIZE / 32; i++) {
+                        const int bits = bin_flags[bin].flags[i];
+                        const int full_count = bitCount(bits);
+                        const int partial_count = bitCount(bits & (flags_bit - 1));
+                        prefix += (i < flags_bin) ? full_count : 0U;
+                        prefix += (i == flags_bin) ? partial_count : 0U;
+                        count += full_count;
+                    }
+
+                    output[global_offsets[lID] + prefix] = index;
                 }
             }
         }
