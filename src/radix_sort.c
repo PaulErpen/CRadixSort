@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define WORKGROUP_SIZE 256
 #define RADIX_SORT_BINS 256
@@ -53,20 +54,21 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
         // compute the histogram
         unsigned int histogram[RADIX_SORT_BINS] = {0};
         for(int lID = 0; lID < WORKGROUP_SIZE; lID++) {
-            for (unsigned int ID = lID; ID < num_elements; ID += WORKGROUP_SIZE) {
+            for (int ID = lID; ID < num_elements; ID += WORKGROUP_SIZE) {
                 unsigned int index = get_index_in(ID, iteration, index_in, index_out);
                 unsigned int depth = float_to_uint(depths[index]);
                 // determine the bin
                 unsigned int bin = (depth >> shift) & (RADIX_SORT_BINS - 1);
                 // increment the histogram
                 histogram[bin] += 1;
+                assert(bin < RADIX_SORT_BINS);
             }
         }
         assert(sum_array(histogram, RADIX_SORT_BINS) == num_elements);
 
 
         // compute the prefix sum
-        unsigned int prefix_sums[WORKGROUP_SIZE] = {0};
+        int prefix_sums[WORKGROUP_SIZE] = {0};
         unsigned int value_holder[WORKGROUP_SIZE] = {0};
         unsigned int shared_data[WORKGROUP_SIZE] = {0};
 
@@ -95,7 +97,7 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
         struct BinFlags bin_flags[WORKGROUP_SIZE];
         unsigned int global_offsets[WORKGROUP_SIZE] = {0};
 
-        for (unsigned int blockID = 0; blockID < num_elements; blockID += WORKGROUP_SIZE) {
+        for (int blockID = 0; blockID < num_elements; blockID += WORKGROUP_SIZE) {
             for(int lID = 0; lID < WORKGROUP_SIZE; lID++) {
                 for (int i = 0; i < 8; i++) {
                     bin_flags[lID].flags[i] = 0;
@@ -122,7 +124,7 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
                     flag_count += bitCount(bin_flags[lID].flags[i]);
                 }
             }
-            assert(flag_count == min(WORKGROUP_SIZE, num_elements) | flag_count == num_elements % WORKGROUP_SIZE);
+            assert((flag_count == min(WORKGROUP_SIZE, num_elements)) | (flag_count == num_elements % WORKGROUP_SIZE));
 
             for (int lID = 0; lID < WORKGROUP_SIZE; lID++) {
                 int flags_bin = lID / 32;
@@ -140,8 +142,8 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
                         const int bits = bin_flags[bin].flags[i];
                         const int full_count = bitCount(bits);
                         const int partial_count = bitCount(bits & (flags_bit - 1));
-                        prefix += (i < flags_bin) ? full_count : 0U;
-                        prefix += (i == flags_bin) ? partial_count : 0U;
+                        prefix += (i < flags_bin) ? full_count : 0;
+                        prefix += (i == flags_bin) ? partial_count : 0;
                         count += full_count;
                     }
 
