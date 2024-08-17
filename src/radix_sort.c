@@ -91,13 +91,13 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
         struct BinFlags bin_flags[WORKGROUP_SIZE];
         unsigned int global_offsets[WORKGROUP_SIZE] = {0};
 
-        for (int i = 0; i < RADIX_SORT_BINS; i++) {
-            for (int j = 0; j < 8; j++) {
-                bin_flags[i].flags[j] = 0;
-            }
-        }
-
         for (unsigned int blockID = 0; blockID < num_elements; blockID += WORKGROUP_SIZE) {
+            for(int lID = 0; lID < WORKGROUP_SIZE; lID++) {
+                for (int i = 0; i < 8; i++) {
+                    bin_flags[lID].flags[i] = 0;
+                }
+            }
+
             for (int lID = 0; lID < WORKGROUP_SIZE; lID++) {
                 int flags_bin = lID / 32;
                 int flags_bit = 1 << (lID % 32);
@@ -134,6 +134,9 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
                     }
 
                     output[global_offsets[lID] + prefix] = index;
+                    if (prefix == count - 1) {
+                        prefix_sums[bin] += count;
+                    }
                 }
             }
         }

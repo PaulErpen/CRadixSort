@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 float generateRandomFloat() {
-    return (float)rand() / (float)(RAND_MAX);
+    return rand();
 }
 
 struct Sequence generate_sequence(unsigned int num_elements) {

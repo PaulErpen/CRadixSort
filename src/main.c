@@ -23,7 +23,7 @@ int main() {
     );
 
 
-    int large_num_elements = 10000;
+    int large_num_elements = 255;
     struct Sequence sequence = generate_sequence(large_num_elements);
     radix_sort(
         large_num_elements,
