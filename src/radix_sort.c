@@ -37,13 +37,13 @@ int min(int a, int b) {
     return a < b ? a : b;
 }
 
-//unsigned int float_to_uint(float f) {
-//    unsigned int result;
-//    memcpy(&result, &f, sizeof(result));
-//    return result;
-//}
+unsigned int float_to_uint(float f) {
+    unsigned int result;
+    memcpy(&result, &f, sizeof(result));
+    return result;
+}
 
-void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_out, unsigned int *depths) {
+void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_out, float *depths) {
     assert(sizeof(index_in) == sizeof(index_out));
     assert(sizeof(index_in) == sizeof(depths));
 
@@ -55,7 +55,7 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
         for(int lID = 0; lID < WORKGROUP_SIZE; lID++) {
             for (unsigned int ID = lID; ID < num_elements; ID += WORKGROUP_SIZE) {
                 unsigned int index = get_index_in(ID, iteration, index_in, index_out);
-                unsigned int depth = depths[index];
+                unsigned int depth = float_to_uint(depths[index]);
                 // determine the bin
                 unsigned int bin = (depth >> shift) & (RADIX_SORT_BINS - 1);
                 // increment the histogram
@@ -109,7 +109,7 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
 
                 if (ID < num_elements) {
                     unsigned int index = get_index_in(ID, iteration, index_in, index_out);
-                    unsigned int depth = depths[index];
+                    unsigned int depth = float_to_uint(depths[index]);
                     unsigned int bin = (depth >> shift) & (RADIX_SORT_BINS - 1);
                     global_offsets[lID] = prefix_sums[bin];
                     bin_flags[bin].flags[flags_bin] += flags_bit;
@@ -131,7 +131,7 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
 
                 if (ID < num_elements) {
                     unsigned int index = get_index_in(ID, iteration, index_in, index_out);
-                    unsigned int depth = depths[index];
+                    unsigned int depth = float_to_uint(depths[index]);
                     unsigned int bin = (depth >> shift) & (RADIX_SORT_BINS - 1);
                     
                     int prefix = 0;

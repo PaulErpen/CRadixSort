@@ -1,5 +1,5 @@
 struct Sequence {
-    unsigned int *depths;
+    float *depths;
     unsigned int *index_in;
     unsigned int *index_out;
 };
