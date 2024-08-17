@@ -1,4 +1,4 @@
-void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_out, float *depths);
+void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_out, unsigned int *depths);
 
 int get_index_in(unsigned int index, unsigned int iteration, unsigned int *index_in, unsigned int *index_out);
 

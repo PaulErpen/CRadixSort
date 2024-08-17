@@ -7,7 +7,7 @@ int main() {
     int num_elements = 10;
     unsigned int index_in[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     unsigned int index_out[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    unsigned int depths[] = {170.1, 170.2, 45.32, 45.23, 90.23, 802.45, 24.433, 2.4534, 66.454, 255.45};
+    unsigned int depths[] = {170, 170, 45, 45, 90, 802, 24, 2, 66, 255};
 
     radix_sort(
         num_elements,

@@ -1,1 +1,1 @@
-void verify_order(int num_elements, unsigned int *index_out, float *depths);
+void verify_order(int num_elements, unsigned int *index_out, unsigned int *depths);
