@@ -33,7 +33,7 @@ int main() {
     );
     verify_order(
         large_num_elements,
-        sequence.index_out,
+        sequence.index_in,
         sequence.depths
     );
 

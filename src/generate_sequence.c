@@ -7,7 +7,7 @@ struct Sequence generate_sequence(unsigned int num_elements) {
     sequence.index_in = malloc(num_elements * sizeof(unsigned int));
     sequence.index_out = malloc(num_elements * sizeof(unsigned int));
     for (int i = 0; i < num_elements; i++) {
-        sequence.depths[i] = rand() % 100000;
+        sequence.depths[i] = rand();
         sequence.index_in[i] = i;
         sequence.index_out[i] = i;
     }
