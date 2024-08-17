@@ -45,9 +45,6 @@ unsigned int float_to_uint(float f) {
 }
 
 void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_out, float *depths) {
-    assert(sizeof(index_in) == sizeof(index_out));
-    assert(sizeof(index_in) == sizeof(depths));
-
     for (int iteration = 0; iteration < 4; iteration++) {
         int shift = 8 * iteration;
         
@@ -65,7 +62,6 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
             }
         }
         assert(sum_array(histogram, RADIX_SORT_BINS) == num_elements);
-
 
         // compute the prefix sum
         int prefix_sums[WORKGROUP_SIZE] = {0};
