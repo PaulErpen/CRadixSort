@@ -33,6 +33,10 @@ int bitCount(unsigned int n) {
     return count;
 }
 
+int min(int a, int b) {
+    return a < b ? a : b;
+}
+
 //unsigned int float_to_uint(float f) {
 //    unsigned int result;
 //    memcpy(&result, &f, sizeof(result));
@@ -112,6 +116,14 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
                 }
             }
 
+            int flag_count = 0;
+            for (int lID = 0; lID < WORKGROUP_SIZE; lID++) {
+                for (int i = 0; i < 8; i++) {
+                    flag_count += bitCount(bin_flags[lID].flags[i]);
+                }
+            }
+            assert(flag_count == min(WORKGROUP_SIZE, num_elements) | flag_count == num_elements % WORKGROUP_SIZE);
+
             for (int lID = 0; lID < WORKGROUP_SIZE; lID++) {
                 int flags_bin = lID / 32;
                 int flags_bit = 1 << (lID % 32);
@@ -137,9 +149,12 @@ void radix_sort(int num_elements, unsigned int *index_in, unsigned int *index_ou
                     if (prefix == count - 1) {
                         prefix_sums[bin] += count;
                     }
+                    if (bin < RADIX_SORT_BINS - 1) {
+                        assert(prefix_sums[bin] <= prefix_sums[bin + 1]);
+                    }
                 }
             }
         }
-        
+        assert(prefix_sums[RADIX_SORT_BINS - 1] == num_elements);
     }
 }
